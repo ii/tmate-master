@@ -3,7 +3,7 @@ FROM elixir:1.9-alpine AS build
 RUN mix local.hex --force && mix local.rebar --force
 RUN apk --no-cache add git npm
 
-WORKDIR /build
+WORKDIR /opt/app
 
 COPY mix.exs .
 COPY mix.lock .
@@ -33,7 +33,7 @@ RUN mix do phx.digest, distillery.release --no-tar && \
         mv _build/prod/rel/tmate/lib/tmate* _build/lib-layer
 
 ### Minimal run-time image
-FROM alpine:3.9
+#FROM alpine:3.9
 
 RUN apk --no-cache add ncurses-libs openssl ca-certificates bash
 
@@ -41,13 +41,15 @@ RUN adduser -D app
 
 ENV MIX_ENV prod
 
-WORKDIR /opt/app
+# WORKDIR /opt/app
 
 # Copy release from build stage
 # We copy in two passes to benefit from docker layers
 # Note "COPY some_dir dst" will copy the content of some_dir into dst
-COPY --from=build /build/_build/prod/rel/* .
-COPY --from=build /build/_build/lib-layer lib/
+RUN cp -a /build/_build/prod/rel/* .
+RUN cp -a /build/_build/lib-layer/* lib/
+# COPY --from=build /build/_build/prod/rel/* .
+# COPY --from=build /build/_build/lib-layer lib/
 
 USER app
 
